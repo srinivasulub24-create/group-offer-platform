@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STORE_OWNER
+  ADMIN
+}
+
+enum OfferStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum GroupStatus {
+  OPEN
+  LOCKED
+  UNLOCKED
+}
+
+enum ContributionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(CUSTOMER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  stores        Store[]
+  contributions Contribution[]
+  coupons Coupon[]
+}
+
+model Store {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  offers      Offer[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Offer {
+  id                String      @id @default(uuid())
+  title             String
+  description       String?
+  requiredGroupSize Int
+  discountValue     Float       // Percentage or fixed amount
+  status            OfferStatus @default(ACTIVE)
+  storeId           String
+  store             Store       @relation(fields: [storeId], references: [id])
+  groups            Group[]
+  coupons           Coupon[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Group {
+  id            String         @id @default(uuid())
+  offerId       String
+  offer         Offer          @relation(fields: [offerId], references: [id])
+  status        GroupStatus    @default(OPEN)
+  currentSize   Int            @default(0)
+  contributions Contribution[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Contribution {
+  id        String             @id @default(uuid())
+  groupId   String
+  group     Group              @relation(fields: [groupId], references: [id])
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  amount    Float?             // Optional, depending on if financial contribution is needed
+  status    ContributionStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+model Coupon {
+  id        String   @id @default(uuid())
+  code      String   @unique
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id])
+
+  isUsed    Boolean  @default(false)
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+}
