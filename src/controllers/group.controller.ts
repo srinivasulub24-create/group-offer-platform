@@ -69,7 +69,7 @@ export const createGroup = async (
     } catch (error) {
         next(error);
     }
-};
+};git log --onelinegit log --oneline
 export const joinGroup = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
